@@ -1,0 +1,2 @@
+export const SUPABASE_URL = "https://nylehvwrizerbdfmpomt.supabase.co";
+export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55bGVodndyaXplcmJkZm1wb210Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MDM5NjksImV4cCI6MjEwNjE3OTk2OX0.m6V6BLEDrB4-KL7TVsr3n3NUSSX_bcxjUfUH3S4b8Bg";

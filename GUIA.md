@@ -1,5 +1,7 @@
 # Cómo usar el Escritorio Jurídico
 
+Ábrela en cualquier computador: https://kirit0-1.github.io/escritorio-juridico/
+
 Esta guía es corta. Léela de arriba hacia abajo.
 
 ## 1. Abrir la aplicación

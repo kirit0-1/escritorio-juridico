@@ -1,2 +1,1 @@
-export const SUPABASE_URL = "https://nylehvwrizerbdfmpomt.supabase.co";
-export const SUPABASE_ANON_KEY = "";
+export { SUPABASE_ANON_KEY, SUPABASE_URL } from "../js/supabase-config.js";
