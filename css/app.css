@@ -1,0 +1,82 @@
+/* Mejoras sobre el maquetado: lectura, vacíos, fichas y formato del asistente. */
+
+.topbar-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.topbar-search-wrap { width: min(280px, 46vw); }
+.topbar-search-wrap .casos-search-input { background: #fff; }
+
+.empty-state { text-align: center; padding: 36px 20px; color: var(--text-muted); }
+.empty-title { font-family: "Source Serif 4", Georgia, serif; font-size: 20px; color: var(--text-main); margin: 0 0 6px; }
+.empty-sub { margin: 0; font-size: 14px; }
+
+.setup-card { padding: 22px 24px; margin-bottom: 22px; border-left: 3px solid var(--gold); }
+.setup-card h3 { font-family: "Source Serif 4", Georgia, serif; font-size: 22px; margin: 0 0 6px; }
+.setup-card p { margin: 0 0 16px; color: var(--text-mid); font-size: 15px; }
+.setup-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+
+.task-item.is-done { opacity: 0.55; }
+.task-item.is-done .task-name { text-decoration: line-through; color: var(--text-muted); }
+
+.client-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.client-name { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+
+.list-head, .table-row {
+  display: grid;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 20px;
+}
+.list-head {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.cols-cases { grid-template-columns: 1fr 150px 110px 120px 90px; }
+.cols-clients { grid-template-columns: 1.3fr 1fr 140px 1fr auto; }
+.cols-agenda { grid-template-columns: 120px 1fr 140px 1fr auto; }
+.table-row { border-bottom: 1px solid #F2F4F8; cursor: pointer; }
+.table-row:hover { background: #F8F9FB; }
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+.agenda-day { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--text-main); }
+.agenda-past { opacity: 0.55; }
+
+.color-pick { display: flex; gap: 8px; }
+.color-swatch {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--border); cursor: pointer; padding: 0;
+}
+.color-swatch.active { box-shadow: 0 0 0 2px var(--accent); }
+
+.ai-draft { background: #fff; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; text-align: left; }
+.ai-draft-kicker {
+  display: flex; justify-content: space-between; gap: 8px; align-items: center;
+  background: #fff9f0; color: var(--amber-state); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; padding: 8px 14px; border-bottom: 1px solid #fde68a;
+}
+.ai-draft-body { padding: 14px 16px 6px; color: var(--text-main); font-size: 14.5px; line-height: 1.6; }
+.ai-draft-body h4 { font-family: "Source Serif 4", Georgia, serif; font-size: 17px; margin: 0 0 8px; }
+.ai-draft-body ol { margin: 0 0 10px; padding-left: 18px; }
+.ai-draft-body li { margin-bottom: 4px; }
+.ai-draft-foot { padding: 8px 16px 12px; font-size: 12px; color: var(--text-muted); }
+.chat-bubble.ai { max-width: min(640px, 86%); padding: 0; background: transparent; border: none; }
+.chat-bubble.user { font-size: 15px; }
+.chat-suggestions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.banner-offline {
+  background: #fff7ed; color: #9a3412; font-size: 13px; padding: 8px 32px; border-bottom: 1px solid #fed7aa;
+}
+
+.stat-number { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 900px) {
+  .setup-grid, .cols-cases, .cols-clients, .cols-agenda { grid-template-columns: 1fr; }
+  .sidebar { width: 72px; }
+  .sidebar-logo h1, .sidebar-logo span, .nav-label, .nav-text, .nav-badge, .nav-badge-ai, .user-name, .user-role { display: none; }
+  .main-content, .screen { margin-left: 72px; }
+  .page-body, .topbar, .tab-content, .case-header-bar { padding-left: 16px; padding-right: 16px; }
+  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+}
