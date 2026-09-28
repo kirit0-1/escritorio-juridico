@@ -80,7 +80,15 @@ El cliente no se borra.
 
 También puedes editar el caso, elegir el estado **Cerrado** y guardar. Pasa lo mismo.
 
-## 7. El otro computador
+## 7. Buscar una ley
+
+1. Pulsa **Biblioteca**.
+2. Escribe, por ejemplo, **Código del Trabajo**.
+3. Pulsa **Buscar**.
+4. **Abrir** muestra la ley en Ley Chile.
+5. **Guardar** deja el enlace en tu biblioteca. El texto de la ley no se copia.
+
+## 8. El otro computador
 
 La dirección de Supabase ya está puesta: `https://nylehvwrizerbdfmpomt.supabase.co`.
 

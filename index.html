@@ -229,10 +229,21 @@
 
 <div id="screen-biblioteca" class="screen main-content">
   <div class="topbar">
-    <div class="topbar-greeting"><h2>Biblioteca Jurídica</h2><p>Fuentes que tú agregas y verificas</p></div>
+    <div class="topbar-greeting"><h2>Biblioteca Jurídica</h2><p>Busca en Ley Chile, abre la ley y guarda el enlace</p></div>
     <button class="btn-primary" type="button" data-open="modal-fuente">Agregar fuente</button>
   </div>
   <div class="page-body">
+    <section class="panel ley-panel">
+      <h3>Buscar en Ley Chile</h3>
+      <p>Escribe el nombre o el número. Aquí aparecen las primeras coincidencias. El texto de la ley se abre en el sitio oficial. Guardar deja solo el enlace.</p>
+      <form id="form-ley" class="ley-form">
+        <input class="form-input" id="ley-query" placeholder="Ejemplo: Código del Trabajo" autocomplete="off" required>
+        <button class="btn-primary" type="submit" id="ley-submit">Buscar</button>
+        <a class="btn-ghost" id="ley-open-all" href="https://www.bcn.cl/leychile/" target="_blank" rel="noopener noreferrer">Abrir Ley Chile</a>
+      </form>
+      <p class="ley-status" id="ley-status"></p>
+      <div id="ley-results"></div>
+    </section>
     <div class="lib-filter-bar" id="lib-filter">
       <button class="lib-filter-btn active" type="button" data-filter-lib="Todo">Todo</button>
       <button class="lib-filter-btn" type="button" data-filter-lib="Ley">Leyes</button>

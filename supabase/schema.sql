@@ -83,14 +83,14 @@ create table if not exists public.juridico_activity (
   at timestamptz default now()
 );
 
-alter table public.juridico_office enable row level security;
-alter table public.juridico_clients enable row level security;
-alter table public.juridico_cases enable row level security;
-alter table public.juridico_documents enable row level security;
-alter table public.juridico_tasks enable row level security;
-alter table public.juridico_events enable row level security;
-alter table public.juridico_library enable row level security;
-alter table public.juridico_activity enable row level security;
+alter table public.juridico_office disable row level security;
+alter table public.juridico_clients disable row level security;
+alter table public.juridico_cases disable row level security;
+alter table public.juridico_documents disable row level security;
+alter table public.juridico_tasks disable row level security;
+alter table public.juridico_events disable row level security;
+alter table public.juridico_library disable row level security;
+alter table public.juridico_activity disable row level security;
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.juridico_office to anon, authenticated;
@@ -101,21 +101,3 @@ grant select, insert, update, delete on public.juridico_tasks to anon, authentic
 grant select, insert, update, delete on public.juridico_events to anon, authenticated;
 grant select, insert, update, delete on public.juridico_library to anon, authenticated;
 grant select, insert, update, delete on public.juridico_activity to anon, authenticated;
-
-drop policy if exists acceso on public.juridico_office;
-drop policy if exists acceso on public.juridico_clients;
-drop policy if exists acceso on public.juridico_cases;
-drop policy if exists acceso on public.juridico_documents;
-drop policy if exists acceso on public.juridico_tasks;
-drop policy if exists acceso on public.juridico_events;
-drop policy if exists acceso on public.juridico_library;
-drop policy if exists acceso on public.juridico_activity;
-
-create policy acceso on public.juridico_office for all to anon, authenticated using (true) with check (true);
-create policy acceso on public.juridico_clients for all to anon, authenticated using (true) with check (true);
-create policy acceso on public.juridico_cases for all to anon, authenticated using (true) with check (true);
-create policy acceso on public.juridico_documents for all to anon, authenticated using (true) with check (true);
-create policy acceso on public.juridico_tasks for all to anon, authenticated using (true) with check (true);
-create policy acceso on public.juridico_events for all to anon, authenticated using (true) with check (true);
-create policy acceso on public.juridico_library for all to anon, authenticated using (true) with check (true);
-create policy acceso on public.juridico_activity for all to anon, authenticated using (true) with check (true);

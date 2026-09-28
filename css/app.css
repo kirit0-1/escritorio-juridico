@@ -66,6 +66,27 @@
 .chat-bubble.user { font-size: 15px; }
 .chat-suggestions { display: flex; gap: 8px; flex-wrap: wrap; }
 
+.ley-panel { margin-bottom: 22px; padding: 18px 20px; }
+.ley-panel h3 { font-family: "Source Serif 4", Georgia, serif; font-size: 22px; margin: 0 0 6px; }
+.ley-panel > p { margin: 0 0 14px; color: var(--text-mid); font-size: 15px; }
+.ley-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ley-form .form-input { flex: 1; min-width: 220px; }
+.ley-form a.btn-ghost { text-decoration: none; border: 1px solid var(--border); }
+.ley-status { margin: 12px 0 0; font-size: 14px; color: var(--text-mid); min-height: 0; }
+.ley-status:empty { display: none; }
+.ley-hit {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.ley-hit-title { font-weight: 600; line-height: 1.4; }
+.ley-hit-meta { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.ley-hit a.btn-ghost { text-decoration: none; }
+.ley-hit button:disabled { opacity: 0.6; cursor: default; }
+
 .banner-offline {
   background: #fff7ed; color: #9a3412; font-size: 13px; padding: 8px 32px; border-bottom: 1px solid #fed7aa;
 }
@@ -73,7 +94,7 @@
 .stat-number { font-variant-numeric: tabular-nums; }
 
 @media (max-width: 900px) {
-  .setup-grid, .cols-cases, .cols-clients, .cols-agenda { grid-template-columns: 1fr; }
+  .setup-grid, .cols-cases, .cols-clients, .cols-agenda, .ley-hit { grid-template-columns: 1fr; }
   .sidebar { width: 72px; }
   .sidebar-logo h1, .sidebar-logo span, .nav-label, .nav-text, .nav-badge, .nav-badge-ai, .user-name, .user-role { display: none; }
   .main-content, .screen { margin-left: 72px; }

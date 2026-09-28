@@ -5,6 +5,7 @@ import {
 import {
   dentroDeDias, draft, empty, esc, estadoDe, fecha, hace, hoyTexto, iniciales, prioridadDe, saludo
 } from "./format.js";
+import { buscarLeyes, leyId, leySearchPage } from "./leychile.js";
 
 let state = blank();
 let online = true;
@@ -13,6 +14,8 @@ let tabName = "resumen";
 let clientColor = CLIENT_COLORS[0];
 let chatReady = false;
 const filters = { casos: "todos", docs: "Todos", lib: "Todo" };
+let leyHits = [];
+const savingLey = new Set();
 
 function blank() {
   return {
@@ -103,6 +106,7 @@ function bind() {
   $("form-evento").addEventListener("submit", onSaveEvent);
   $("form-tarea").addEventListener("submit", onSaveTask);
   $("form-fuente").addEventListener("submit", onSaveFuente);
+  $("form-ley").addEventListener("submit", onSearchLey);
   $("btn-edit-case").addEventListener("click", () => openCaseForm(caseById(caseId)));
   $("btn-close-case").addEventListener("click", () => closeCase(caseId));
   for (const zone of ["dropzone-caso", "dropzone-docs"]) bindDrop($(zone));
@@ -178,6 +182,11 @@ function onClick(event) {
   const openCase = event.target.closest("[data-open-case]");
   if (openCase && !event.target.closest("[data-delete]")) {
     openCaseView(openCase.dataset.openCase);
+    return;
+  }
+  const saveLey = event.target.closest("[data-save-ley]");
+  if (saveLey) {
+    saveLeyHit(saveLey.dataset.saveLey);
     return;
   }
   const del = event.target.closest("[data-delete]");
@@ -703,14 +712,99 @@ function renderDocs() {
   }).join("") : `<tr><td colspan="5">${empty("Sin documentos", "Anota el nombre del archivo y el caso al que pertenece.")}</td></tr>`;
 }
 
+function leySaved(url) {
+  const id = leyId(url);
+  return state.library.some((item) => item.fuente === url || (id && leyId(item.fuente) === id));
+}
+
+function fuenteLine(item) {
+  const fuente = item.fuente || "";
+  if (/^https:\/\/(www\.)?(leychile\.cl|bcn\.cl)\//i.test(fuente)) {
+    const extra = item.nota ? `${esc(item.nota)} · ` : "";
+    return `${extra}<a href="${esc(fuente)}" target="_blank" rel="noopener noreferrer">Abrir en Ley Chile</a>`;
+  }
+  return esc(fuente || "Sin referencia de verificación");
+}
+
+async function onSearchLey(event) {
+  event.preventDefault();
+  const query = $("ley-query").value.trim();
+  const button = $("ley-submit");
+  $("ley-open-all").href = leySearchPage(query);
+  button.disabled = true;
+  button.textContent = "Buscando…";
+  $("ley-status").textContent = "Consultando Ley Chile…";
+  leyHits = [];
+  paintLeyHits();
+  try {
+    const found = await buscarLeyes(query);
+    leyHits = found.items;
+    const shown = leyHits.length;
+    $("ley-status").textContent = shown
+      ? `Ley Chile encontró ${found.total.toLocaleString("es-CL")} coincidencias. Aquí van las primeras ${shown}. El texto completo se abre en el sitio oficial.`
+      : "Sin coincidencias. Prueba con el número de la ley o ábrela en Ley Chile.";
+    paintLeyHits();
+  } catch (error) {
+    $("ley-status").textContent = `${error.message}. Puedes abrir la búsqueda en Ley Chile.`;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Buscar";
+  }
+}
+
+function paintLeyHits() {
+  const box = $("ley-results");
+  if (!box) return;
+  box.innerHTML = leyHits.map((item, index) => {
+    const saved = leySaved(item.url);
+    const saving = savingLey.has(item.url);
+    const meta = [item.numero, item.tipo, item.fecha].filter(Boolean).join(" · ");
+    return `<article class="ley-hit">
+      <div>
+        <div class="ley-hit-title">${esc(item.titulo)}</div>
+        <div class="ley-hit-meta">${esc(meta)}</div>
+      </div>
+      <a class="btn-ghost" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Abrir</a>
+      <button class="btn-primary" type="button" data-save-ley="${index}" ${saved || saving ? "disabled" : ""}>${saved ? "Guardada" : saving ? "Guardando…" : "Guardar"}</button>
+    </article>`;
+  }).join("");
+}
+
+async function saveLeyHit(index) {
+  const item = leyHits[Number(index)];
+  if (!item || savingLey.has(item.url)) return;
+  if (leySaved(item.url)) {
+    toast("Esa ley ya está en la biblioteca");
+    paintLeyHits();
+    return;
+  }
+  const nota = [item.numero, item.fecha].filter(Boolean).join(" · ");
+  savingLey.add(item.url);
+  paintLeyHits();
+  try {
+    await commit(async () => api.create("library", {
+      titulo: item.titulo,
+      tipo: "Ley",
+      materia: item.numero || "Ley",
+      fuente: item.url,
+      nota,
+      estado: "En Ley Chile"
+    }), "Enlace guardado en la biblioteca");
+  } finally {
+    savingLey.delete(item.url);
+    paintLeyHits();
+  }
+}
+
 function renderLibrary() {
   const rows = state.library.filter((item) => filters.lib === "Todo" || item.tipo === filters.lib || item.materia === filters.lib);
   $("lib-grid").innerHTML = rows.length ? rows.map((item) => `<article class="lib-card">
     <div class="lib-card-type">${esc(item.tipo || "Fuente")} · ${esc(item.materia || "")}</div>
     <div class="lib-card-title">${esc(item.titulo)}</div>
-    <div class="lib-card-sub">${esc(item.fuente || "Sin referencia de verificación")}</div>
+    <div class="lib-card-sub">${fuenteLine(item)}</div>
     <div class="lib-card-footer"><span>${esc(item.estado || "Por verificar")}</span><button class="btn-ghost" type="button" data-delete="library" data-id="${esc(item.id)}">Quitar</button></div>
-  </article>`).join("") : empty("Biblioteca vacía", "Agrega solo fuentes que vayas a verificar.");
+  </article>`).join("") : empty("Biblioteca vacía", "Busca una ley arriba o agrega una fuente que vayas a verificar.");
+  paintLeyHits();
 }
 
 function renderSearch(query) {
