@@ -6,6 +6,8 @@ import {
   dentroDeDias, draft, empty, esc, estadoDe, fecha, hace, hoyTexto, iniciales, prioridadDe, saludo
 } from "./format.js";
 import { buscarLeyes, leyId, leySearchPage } from "./leychile.js";
+import { blobFromDoc, fileBase64, fileTooBig, textFromFile } from "./files.js";
+import { caseAnswer, chatAnswer } from "./assist.js";
 
 let state = blank();
 let online = true;
@@ -15,6 +17,8 @@ let clientColor = CLIENT_COLORS[0];
 let chatReady = false;
 const filters = { casos: "todos", docs: "Todos", lib: "Todo" };
 let leyHits = [];
+let selectedFile = null;
+let previewUrl = "";
 const savingLey = new Set();
 
 function blank() {
@@ -113,6 +117,12 @@ function bind() {
   $("doc-file").addEventListener("change", () => {
     const file = $("doc-file").files?.[0];
     if (!file) return;
+    if (fileTooBig(file)) {
+      toast("El archivo supera 2 MB. Elige uno más liviano.", "error");
+      $("doc-file").value = "";
+      return;
+    }
+    selectedFile = file;
     if (!$("modal-subir-doc").classList.contains("open")) openDocModal(file);
     else {
       $("doc-nombre").value = file.name;
@@ -177,6 +187,11 @@ function onClick(event) {
   const task = event.target.closest("[data-task]");
   if (task) {
     toggleTask(task.dataset.task);
+    return;
+  }
+  const viewDoc = event.target.closest("[data-view-doc]");
+  if (viewDoc) {
+    viewDocument(viewDoc.dataset.viewDoc);
     return;
   }
   const openCase = event.target.closest("[data-open-case]");
@@ -265,6 +280,10 @@ function openModal(id) {
 
 function closeModal(id) {
   $(id)?.classList.remove("open");
+  if (id === "modal-ver-doc" && previewUrl) {
+    URL.revokeObjectURL(previewUrl);
+    previewUrl = "";
+  }
   if (!document.querySelector(".modal-overlay.open")) document.body.style.overflow = "";
 }
 
@@ -350,13 +369,51 @@ function openClientForm(cliente) {
 
 function openDocModal(file) {
   $("form-doc").reset();
+  $("doc-file").value = "";
+  selectedFile = file || null;
   fillRelations();
   if (caseId) $("doc-caso").value = caseId;
   if (file) {
-    $("doc-nombre").value = file.name;
-    $("doc-tamano").value = file.size ? `${Math.max(1, Math.round(file.size / 1024))} KB` : "";
+    if (fileTooBig(file)) {
+      toast("El archivo supera 2 MB. Elige uno más liviano.", "error");
+      selectedFile = null;
+    } else {
+      $("doc-nombre").value = file.name;
+      $("doc-tamano").value = file.size ? `${Math.max(1, Math.round(file.size / 1024))} KB` : "";
+    }
   }
   openModal("modal-subir-doc");
+}
+
+function viewDocument(id) {
+  const item = state.documents.find((doc) => doc.id === id);
+  if (!item?.data) {
+    toast("Este documento no tiene archivo. Vuelve a subirlo.", "warning");
+    return;
+  }
+  let blob;
+  try {
+    blob = blobFromDoc(item);
+  } catch {
+    toast("No pude abrir el archivo.", "error");
+    return;
+  }
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(blob);
+  $("ver-doc-title").textContent = item.nombre;
+  const mime = item.mime || "";
+  const body = $("ver-doc-body");
+  if (mime.startsWith("image/")) {
+    body.innerHTML = `<img class="doc-preview" alt="" src="${previewUrl}">`;
+  } else if (mime === "application/pdf" || item.nombre.toLowerCase().endsWith(".pdf")) {
+    body.innerHTML = `<iframe class="doc-frame" src="${previewUrl}" title="${esc(item.nombre)}"></iframe>`;
+  } else if (item.texto) {
+    body.innerHTML = `<pre class="doc-pre"></pre>`;
+    body.querySelector("pre").textContent = item.texto;
+  } else {
+    body.innerHTML = `<p>Este formato se abre descargándolo.</p><a class="btn-primary" href="${previewUrl}" download="${esc(item.nombre)}">Descargar</a>`;
+  }
+  openModal("modal-ver-doc");
 }
 
 function askClose() {
@@ -423,21 +480,44 @@ function onSaveClient(event) {
   }, id ? "Cliente actualizado" : "Cliente agregado");
 }
 
-function onSaveDoc(event) {
+async function onSaveDoc(event) {
   event.preventDefault();
+  const file = selectedFile;
+  if (file && fileTooBig(file)) {
+    toast("El archivo supera 2 MB. Elige uno más liviano.", "error");
+    return;
+  }
   const data = {
     nombre: $("doc-nombre").value,
     casoId: $("doc-caso").value,
     tipo: $("doc-tipo").value,
     fecha: $("doc-fecha").value,
     tamano: $("doc-tamano").value,
-    descripcion: $("doc-desc").value
+    descripcion: $("doc-desc").value,
+    mime: file?.type || "",
+    texto: "",
+    data: ""
   };
+  if (file) {
+    try {
+      data.data = await fileBase64(file);
+      data.mime = file.type || (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "");
+      data.texto = await textFromFile(file);
+    } catch {
+      toast("No pude leer el archivo.", "error");
+      return;
+    }
+  }
+  const message = file
+    ? (data.texto ? "Documento guardado. Ya se puede ver." : "Documento guardado. Se puede ver; no leí texto para el asistente.")
+    : "Documento anotado";
   commit(async () => {
     const next = await api.create("documents", data);
     closeModal("modal-subir-doc");
+    selectedFile = null;
+    $("doc-file").value = "";
     return next;
-  }, "Documento anotado");
+  }, message);
 }
 
 function onSaveEvent(event) {
@@ -691,7 +771,7 @@ function badgeDoc(tipo) {
 }
 
 function renderDocs() {
-  $("docs-sub").textContent = state.documents.length ? `${state.documents.length} fichas de documento` : "Sin archivos";
+  $("docs-sub").textContent = state.documents.length ? `${state.documents.length} documentos` : "Sin archivos";
   const query = ($("docs-search").value || "").trim().toLowerCase();
   const rows = state.documents.filter((item) => {
     const caso = caseById(item.casoId);
@@ -703,13 +783,23 @@ function renderDocs() {
   $("docs-body").innerHTML = rows.length ? rows.map((item) => {
     const caso = caseById(item.casoId);
     return `<tr class="doc-row" ${caso ? `data-open-case="${esc(caso.id)}"` : ""}>
-      <td><div class="doc-name">${esc(item.nombre)}</div></td>
+      <td>${docLabel(item)}</td>
       <td>${esc(caso?.nombre || "General")}</td>
       <td><span class="badge ${badgeDoc(item.tipo)}">${esc(item.tipo || "Otro")}</span></td>
       <td>${esc(fecha(item.fecha))}</td>
-      <td><button class="doc-action-btn" type="button" data-delete="documents" data-id="${esc(item.id)}">Quitar</button></td>
+      <td>${docActions(item)}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="5">${empty("Sin documentos", "Anota el nombre del archivo y el caso al que pertenece.")}</td></tr>`;
+  }).join("") : `<tr><td colspan="5">${empty("Sin documentos", "Sube el PDF o el texto. Después ábrelo con Ver.")}</td></tr>`;
+}
+
+function docLabel(item) {
+  if (!item.data) return `<div class="doc-name">${esc(item.nombre)}</div><div class="case-meta">Sin archivo. Vuelve a subirlo.</div>`;
+  return `<button class="doc-view" type="button" data-view-doc="${esc(item.id)}">${esc(item.nombre)}</button>`;
+}
+
+function docActions(item) {
+  const view = item.data ? `<button class="doc-action-btn" type="button" data-view-doc="${esc(item.id)}">Ver</button>` : "";
+  return `${view}<button class="doc-action-btn" type="button" data-delete="documents" data-id="${esc(item.id)}">Quitar</button>`;
 }
 
 function leySaved(url) {
@@ -890,8 +980,8 @@ function renderCase(noteDraft) {
     <div class="summary-text"><h3>Resumen</h3><p>${esc(caso.resumen || "Todavía no hay resumen. Edita el caso y escribe los hechos con tus palabras.")}</p></div>
   </div>`;
 
-  $("tab-documentos").innerHTML = `<div class="dropzone" id="dropzone-case-inline">Arrastra un archivo de este caso</div>
-    ${docs.length ? `<table class="doc-table"><thead><tr><th>Documento</th><th>Tipo</th><th>Fecha</th><th></th></tr></thead><tbody>${docs.map((item) => `<tr class="doc-row"><td><div class="doc-name">${esc(item.nombre)}</div></td><td><span class="badge ${badgeDoc(item.tipo)}">${esc(item.tipo)}</span></td><td>${esc(fecha(item.fecha))}</td><td><button class="doc-action-btn" type="button" data-delete="documents" data-id="${esc(item.id)}">Quitar</button></td></tr>`).join("")}</tbody></table>` : empty("Sin documentos en este caso", "Sube la ficha del archivo desde el botón del menú o arrastrándolo aquí.")}`;
+  $("tab-documentos").innerHTML = `<div class="dropzone" id="dropzone-case-inline">Arrastra un PDF o un texto de este caso</div>
+    ${docs.length ? `<table class="doc-table"><thead><tr><th>Documento</th><th>Tipo</th><th>Fecha</th><th></th></tr></thead><tbody>${docs.map((item) => `<tr class="doc-row"><td>${docLabel(item)}</td><td><span class="badge ${badgeDoc(item.tipo)}">${esc(item.tipo)}</span></td><td>${esc(fecha(item.fecha))}</td><td>${docActions(item)}</td></tr>`).join("")}</tbody></table>` : empty("Sin documentos en este caso", "Arrastra el archivo aquí. Después ábrelo con Ver.")}`;
   bindDrop($("dropzone-case-inline"));
 
   $("tab-cronologia").innerHTML = `<div class="section-header"><div class="section-title">Línea temporal</div><button class="btn-outline" type="button" id="btn-add-event">+ Agregar evento</button></div>
@@ -910,12 +1000,12 @@ function renderCase(noteDraft) {
 
   $("tab-ia").innerHTML = `<div class="caso-two-col"><div>
       <div class="ai-panel"><div class="ai-panel-header"><div><h3>Asistente del caso</h3><p>${esc(caso.nombre)}</p></div></div>
-        <div class="ai-sources"><div class="ai-sources-label">1 · Fuentes a considerar</div><div id="ai-sources">${docs.length ? docs.map((item) => `<label class="source-check"><input type="checkbox" data-name="${esc(item.nombre)}"> ${esc(item.nombre)}</label>`).join("") : "<p class=\"case-meta\">No hay documentos. El borrador saldrá como lista de verificación.</p>"}</div></div>
+        <div class="ai-sources"><div class="ai-sources-label">1 · Documentos a usar</div><div id="ai-sources">${docs.length ? docs.map((item) => `<label class="source-check selected"><input type="checkbox" data-name="${esc(item.nombre)}" checked> ${esc(item.nombre)}${item.texto ? "" : " · sin texto leíble"}</label>`).join("") : "<p class=\"case-meta\">Sube un PDF o un texto en la pestaña Documentos.</p>"}</div></div>
         <div class="ai-actions"><div class="ai-actions-label">2 · Formato de salida</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${AI_TOOLS.map((tool) => `<button class="ai-action-btn" type="button" data-ai-tool="${tool.id}">${esc(tool.label)}</button>`).join("")}</div></div>
       </div>
       <div id="ai-result-box" style="display:none;margin-top:16px;"></div>
     </div>
-    <div class="panel"><div class="panel-header"><span class="panel-title">Cómo responde</span></div><div style="padding:14px 16px;font-size:13px;color:var(--text-mid);">Cada herramienta devuelve el mismo esquema: aviso de borrador, título, puntos numerados y fuentes marcadas. No inventa fallos ni plazos.</div></div>
+    <div class="panel"><div class="panel-header"><span class="panel-title">Cómo responde</span></div><div style="padding:14px 16px;font-size:13px;color:var(--text-mid);">Lee el texto de los PDF y de los archivos de texto del caso. Si el PDF es una foto o un escaneo, ábrelo con Ver: el asistente no puede leerlo. No inventa fallos ni calcula plazos.</div></div>
   </div>`;
   switchTab(tabName);
 }
@@ -928,43 +1018,16 @@ function showCaseDraft(toolId) {
   const caso = caseById(caseId);
   if (!caso) return;
   const tool = AI_TOOLS.find((item) => item.id === toolId) || AI_TOOLS[0];
-  const sources = [...document.querySelectorAll("#ai-sources input:checked")].map((input) => input.dataset.name);
-  const client = clientById(caso.clienteId);
-  const events = state.events.filter((item) => item.casoId === caso.id).map((item) => `${fecha(item.fecha)} · ${item.titulo}`);
-  const points = {
-    resumir: [
-      caso.resumen || "Escribe el resumen del caso antes de pedirle forma a este borrador.",
-      client ? `Cliente de la ficha: ${client.nombre}.` : "Asocia un cliente para personalizar el borrador.",
-      sources.length ? "Limítate a las fuentes marcadas." : "No marcaste fuentes: no hay documento que resumir."
-    ],
-    comparar: sources.length < 2
-      ? ["Marca al menos dos documentos para compararlos.", "Anota tú en qué coinciden y en qué no.", "Este asistente no abre los archivos."]
-      : [`Compara: ${sources.join(" / ")}.`, "Anota coincidencias, diferencias y lo que no está en ambos.", "No des por cierta una diferencia que no hayas leído."],
-    fechas: [
-      events.length ? `Ya agendado: ${events.join("; ")}.` : "Este caso no tiene fechas en la agenda.",
-      "Si el papel trae otra fecha, créala en Agenda.",
-      "No calculo días hábiles ni vencimientos."
-    ],
-    borrador: [
-      "I. Hechos que puedes probar.",
-      "II. Lo que pides.",
-      sources.length ? `III. Respaldo marcado: ${sources.join(", ")}.` : "III. Falta marcar documentos de respaldo.",
-      "IV. Revisión tuya antes de firmar o presentar."
-    ],
-    contradicciones: [
-      "Revisa si el resumen y los documentos marcados hablan del mismo hecho.",
-      sources.length ? `Pendiente de lectura humana: ${sources.join(", ")}.` : "Sin documentos marcados no hay vacío detectable.",
-      client?.notas ? `Contexto de la ficha: ${client.notas}` : "La ficha del cliente no tiene notas de contexto."
-    ]
-  }[tool.id];
+  const selected = [...document.querySelectorAll("#ai-sources input:checked")].map((input) => input.dataset.name);
   const box = $("ai-result-box");
   box.style.display = "block";
-  box.innerHTML = `${draft({
-    kicker: "Borrador · requiere tu revisión",
-    tool: tool.label,
-    title: caso.nombre,
-    points,
-    sources
+  box.innerHTML = `${caseAnswer({
+    tool,
+    caso,
+    client: clientById(caso.clienteId),
+    docs: state.documents.filter((item) => item.casoId === caso.id),
+    events: state.events.filter((item) => item.casoId === caso.id),
+    selected
   })}<div class="modal-footer"><button class="btn-primary" type="button" data-copy-draft>Copiar</button><button class="btn-outline" type="button" data-save-draft>Guardar en notas</button></div>`;
   box.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -998,11 +1061,11 @@ function startChat() {
   const box = $("chat-messages");
   box.innerHTML = `<div class="chat-bubble ai">${draft({
     kicker: "Asistente del estudio",
-    tool: "Formato fijo",
-    title: "Listo cuando cargues tu propio material",
+    tool: "Lee lo que subiste",
+    title: "Pregunta por un caso o por una palabra del documento",
     points: [
-      "Respondo con aviso, título, puntos y fuentes.",
-      "Uso los casos y documentos que ya guardaste.",
+      "Uso el texto de los PDF y de los archivos de texto.",
+      "Si el archivo es una foto o un escaneo, ábrelo con Ver.",
       "No cito jurisprudencia ni calculo plazos."
     ],
     sources: []
@@ -1028,28 +1091,8 @@ function sendChat(preset) {
     thinking.remove();
     const reply = document.createElement("div");
     reply.className = "chat-bubble ai";
-    reply.innerHTML = chatDraft(message);
+    reply.innerHTML = chatAnswer(message, state);
     messages.appendChild(reply);
     reply.scrollIntoView({ block: "end" });
   }, 1000);
-}
-
-function chatDraft(message) {
-  const q = message.toLowerCase();
-  const related = state.cases.filter((item) => q.includes(item.nombre.toLowerCase()) || item.nombre.toLowerCase().includes(q.slice(0, 24))).slice(0, 3);
-  const docs = state.documents.filter((item) => related.some((caso) => caso.id === item.casoId)).map((item) => item.nombre);
-  return draft({
-    kicker: "Borrador · no es asesoría",
-    tool: "Consulta",
-    title: message.slice(0, 110),
-    points: [
-      related.length ? `Casos del estudio que coinciden: ${related.map((item) => item.nombre).join(", ")}.` : "No enlacé esta consulta a un caso guardado.",
-      q.includes("audiencia") || q.includes("plazo") || q.includes("fecha")
-        ? "Anota la fecha en Agenda. Aquí no se calculan plazos."
-        : "Separa hechos, pedidos y documentos antes de redactar.",
-      "Contrasta la norma en la fuente oficial. Este texto no la cita.",
-      state.office.lawyer ? `Queda a revisión de ${state.office.lawyer}.` : "Pon tu nombre en Configuración para firmar la revisión."
-    ],
-    sources: docs
-  });
 }

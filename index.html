@@ -267,14 +267,14 @@
 
 <div id="screen-asistente" class="screen main-content">
   <div class="topbar">
-    <div class="topbar-greeting"><h2>Asistente IA</h2><p>Borradores con una misma estructura. Siempre los revisas tú.</p></div>
+    <div class="topbar-greeting"><h2>Asistente IA</h2><p>Responde con el texto de los documentos que subiste.</p></div>
     <div class="sync-badge" style="background:#fef9ec;color:var(--amber-state);">Todo resultado es un borrador</div>
   </div>
   <div class="chat-container">
     <div class="chat-messages" id="chat-messages"></div>
     <div class="chat-meta">No cita fallos ni calcula plazos. Contrasta el borrador con la fuente oficial.</div>
     <div class="chat-input-bar">
-      <textarea class="chat-textarea" id="chat-input" placeholder="Escribe tu consulta…" rows="1"></textarea>
+      <textarea class="chat-textarea" id="chat-input" placeholder="Pregunta por un caso o por una palabra del documento…" rows="1"></textarea>
       <button class="chat-send-btn" id="chat-send" type="button" aria-label="Enviar">➤</button>
     </div>
   </div>
@@ -358,7 +358,7 @@
     <div class="modal-header"><h3 class="modal-title">Subir documento</h3><button class="modal-close" type="button" data-close="modal-subir-doc">✕</button></div>
     <form id="form-doc">
       <div class="modal-body">
-        <div class="dropzone" id="dropzone-caso">Elige un archivo. Se guarda el nombre en la ficha; el archivo sigue en tu equipo.</div>
+        <div class="dropzone" id="dropzone-caso">Elige un PDF o un texto de hasta 2 MB. Después se abre con Ver.</div>
         <input type="file" id="doc-file" hidden>
         <div class="form-group"><label class="form-label">Nombre *</label><input class="form-input" id="doc-nombre" required></div>
         <div class="form-row">
@@ -376,6 +376,13 @@
         <button class="btn-primary" type="submit">Guardar documento</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ver-doc">
+  <div class="modal-box wide">
+    <div class="modal-header"><h3 class="modal-title" id="ver-doc-title">Documento</h3><button class="modal-close" type="button" data-close="modal-ver-doc">✕</button></div>
+    <div class="modal-body" id="ver-doc-body"></div>
   </div>
 </div>
 

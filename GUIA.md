@@ -53,7 +53,7 @@ El cliente se queda aunque cierres sus casos.
 Dentro del caso hay pestañas:
 
 - **Resumen**: los datos principales
-- **Documentos**: el nombre del archivo (el PDF sigue en tu computador)
+- **Documentos**: el archivo queda guardado. Pulsa **Ver** para abrirlo. El asistente lee PDF y texto; si es una foto, solo se puede ver
 - **Cronología**: las fechas de ese caso
 - **Tareas**: lo que falta hacer. Al marcar la casilla, se tacha
 - **Notas**: tus apuntes. Pulsa **Guardar**

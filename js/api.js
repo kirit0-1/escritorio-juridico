@@ -13,7 +13,7 @@ const TABLES = {
 const LISTS = {
   clients: ["nombre", "email", "telefono", "rut", "notas", "color"],
   cases: ["nombre", "materia", "detalle", "clienteId", "contraparte", "tribunal", "rol", "estado", "fecha", "resumen", "notas"],
-  documents: ["nombre", "casoId", "tipo", "fecha", "tamano", "descripcion"],
+  documents: ["nombre", "casoId", "tipo", "fecha", "tamano", "descripcion", "mime", "texto", "data"],
   tasks: ["nombre", "casoId", "prioridad", "fecha", "done"],
   events: ["titulo", "detalle", "casoId", "fecha", "tipo"],
   library: ["titulo", "tipo", "materia", "fuente", "estado", "nota"]
@@ -26,8 +26,31 @@ function clean(value, max = 2000) {
 function valueOf(field, raw) {
   if (field === "done") return Boolean(raw);
   if (field === "color") return /^#[0-9a-fA-F]{6}$/.test(raw || "") ? raw : "#1a4fa0";
+  if (field === "data") return String(raw ?? "").slice(0, 8_000_000);
+  if (field === "texto") return clean(raw, 12000);
+  if (field === "mime") return clean(raw, 120);
   const max = field === "notas" || field === "resumen" ? 8000 : 500;
   return clean(raw, max);
+}
+
+function unpackDoc(raw) {
+  const text = raw || "";
+  if (text.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === "object" && "data" in parsed) {
+        return {
+          descripcion: parsed.nota || "",
+          mime: parsed.mime || "",
+          texto: parsed.texto || "",
+          data: parsed.data || ""
+        };
+      }
+    } catch {
+      /* una nota antigua, sin archivo */
+    }
+  }
+  return { descripcion: text, mime: "", texto: "", data: "" };
 }
 
 function pick(body, fields) {
@@ -65,14 +88,28 @@ async function sb(path, options = {}) {
 
 const fromClient = (row) => ({ id: row.id, nombre: row.nombre, email: row.email || "", telefono: row.telefono || "", rut: row.rut || "", notas: row.notas || "", color: row.color || "#1a4fa0", updatedAt: row.updated_at });
 const fromCase = (row) => ({ id: row.id, nombre: row.nombre, materia: row.materia || "", detalle: row.detalle || "", clienteId: row.cliente_id || "", contraparte: row.contraparte || "", tribunal: row.tribunal || "", rol: row.rol || "", estado: row.estado || "prep", fecha: row.fecha || "", resumen: row.resumen || "", notas: row.notas || "", updatedAt: row.updated_at });
-const fromDoc = (row) => ({ id: row.id, nombre: row.nombre, casoId: row.caso_id || "", tipo: row.tipo || "", fecha: row.fecha || "", tamano: row.tamano || "", descripcion: row.descripcion || "", updatedAt: row.updated_at });
+const fromDoc = (row) => {
+  const file = unpackDoc(row.descripcion);
+  return { id: row.id, nombre: row.nombre, casoId: row.caso_id || "", tipo: row.tipo || "", fecha: row.fecha || "", tamano: row.tamano || "", descripcion: file.descripcion, mime: file.mime, texto: file.texto, data: file.data, updatedAt: row.updated_at };
+};
 const fromTask = (row) => ({ id: row.id, nombre: row.nombre, casoId: row.caso_id || "", prioridad: row.prioridad || "media", fecha: row.fecha || "", done: Boolean(row.done), updatedAt: row.updated_at });
 const fromEvent = (row) => ({ id: row.id, titulo: row.titulo, detalle: row.detalle || "", casoId: row.caso_id || "", fecha: row.fecha || "", tipo: row.tipo || "", updatedAt: row.updated_at });
 const fromLibrary = (row) => ({ id: row.id, titulo: row.titulo, tipo: row.tipo || "", materia: row.materia || "", fuente: row.fuente || "", estado: row.estado || "", nota: row.nota || "", updatedAt: row.updated_at });
 
 const toClient = (item) => ({ id: item.id, nombre: item.nombre, email: item.email, telefono: item.telefono, rut: item.rut, notas: item.notas, color: item.color, updated_at: item.updatedAt });
 const toCase = (item) => ({ id: item.id, nombre: item.nombre, materia: item.materia, detalle: item.detalle, cliente_id: item.clienteId || null, contraparte: item.contraparte, tribunal: item.tribunal, rol: item.rol, estado: item.estado, fecha: item.fecha || null, resumen: item.resumen, notas: item.notas, updated_at: item.updatedAt });
-const toDoc = (item) => ({ id: item.id, nombre: item.nombre, caso_id: item.casoId || null, tipo: item.tipo, fecha: item.fecha || null, tamano: item.tamano, descripcion: item.descripcion, updated_at: item.updatedAt });
+const toDoc = (item) => ({
+  id: item.id,
+  nombre: item.nombre,
+  caso_id: item.casoId || null,
+  tipo: item.tipo,
+  fecha: item.fecha || null,
+  tamano: item.tamano,
+  descripcion: item.data
+    ? JSON.stringify({ nota: item.descripcion || "", mime: item.mime || "", texto: item.texto || "", data: item.data })
+    : (item.descripcion || ""),
+  updated_at: item.updatedAt
+});
 const toTask = (item) => ({ id: item.id, nombre: item.nombre, caso_id: item.casoId || null, prioridad: item.prioridad, fecha: item.fecha || null, done: Boolean(item.done), updated_at: item.updatedAt });
 const toEvent = (item) => ({ id: item.id, titulo: item.titulo, detalle: item.detalle, caso_id: item.casoId || null, fecha: item.fecha || null, tipo: item.tipo, updated_at: item.updatedAt });
 const toLibrary = (item) => ({ id: item.id, titulo: item.titulo, tipo: item.tipo, materia: item.materia, fuente: item.fuente, estado: item.estado, nota: item.nota, updated_at: item.updatedAt });
