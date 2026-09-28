@@ -1,2 +1,3 @@
 server/data/db.json
 server/.env
+supabase/.temp/
