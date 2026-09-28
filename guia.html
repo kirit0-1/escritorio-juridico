@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía de uso</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; font-family: "Source Sans 3", sans-serif; background: #F8F9FB; color: #1a2035; line-height: 1.6; }
+  main { max-width: 680px; margin: 0 auto; padding: 40px 20px 64px; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-size: 36px; margin: 0 0 8px; }
+  h2 { font-family: "Source Serif 4", Georgia, serif; font-size: 24px; margin: 32px 0 8px; }
+  p, li { font-size: 18px; }
+  a { color: #1a4fa0; }
+  code { background: #fff; border: 1px solid #DDE1EA; padding: 2px 6px; border-radius: 4px; }
+  .box { background: #fff; border: 1px solid #DDE1EA; border-radius: 8px; padding: 14px 16px; }
+</style>
+</head>
+<body>
+<main>
+  <p><a href="index.html">← Volver al escritorio</a></p>
+  <h1>Cómo se usa</h1>
+  <p>Sigue los números. No hace falta saber de computadores.</p>
+
+  <h2>1. Abrir</h2>
+  <p>En la carpeta del proyecto escribe <code>npm start</code> y abre <a href="http://127.0.0.1:4173/">http://127.0.0.1:4173/</a>.</p>
+  <p>La pastilla verde dice dónde se guardan los datos: <strong>en este equipo</strong> o <strong>en Supabase</strong>.</p>
+
+  <h2>2. Tu nombre</h2>
+  <p>En la primera pantalla escribe el estudio, tu nombre y tu cargo. Pulsa <strong>Guardar</strong>.</p>
+
+  <h2>3. Un cliente</h2>
+  <ol>
+    <li>Entra a <strong>Clientes</strong>.</li>
+    <li>Pulsa <strong>Agregar cliente</strong>.</li>
+    <li>Completa nombre, teléfono y correo.</li>
+    <li>Elige un color y guarda.</li>
+  </ol>
+  <p>El cliente se queda aunque cierres sus casos.</p>
+
+  <h2>4. Un caso</h2>
+  <ol>
+    <li>Entra a <strong>Casos</strong> y pulsa <strong>Nuevo caso</strong>.</li>
+    <li>Pon el nombre y elige el cliente.</li>
+    <li>Guarda y haz clic en el caso.</li>
+  </ol>
+  <p>Adentro puedes ver el resumen, anotar documentos, fechas, tareas y notas. El asistente solo arma un borrador. Tú lo revisas.</p>
+
+  <h2>5. Cerrar un caso</h2>
+  <div class="box">
+    <p>Cuando el caso termina, pulsa <strong>Cerrar y borrar</strong>.</p>
+    <p>Se eliminan el caso, sus documentos, tareas, notas y fechas. Así no ocupan espacio.</p>
+    <p>El cliente no se borra.</p>
+  </div>
+
+  <h2>6. Supabase, una sola vez</h2>
+  <ol>
+    <li>Crea un proyecto gratis en <a href="https://supabase.com">supabase.com</a>.</li>
+    <li>Abre <strong>SQL Editor</strong>, pega el archivo <code>supabase/schema.sql</code> y pulsa <strong>Run</strong>.</li>
+    <li>En <strong>Project Settings → API</strong> copia la URL del proyecto y la clave <strong>service_role</strong>.</li>
+    <li>Esa clave es secreta. No la publiques.</li>
+    <li>Crea el archivo <code>server/.env</code> con la URL y la clave. Hay un ejemplo en <code>server/.env.example</code>.</li>
+    <li>Vuelve a escribir <code>npm start</code> y recarga la página.</li>
+  </ol>
+  <p>La pastilla debe decir <strong>Guardado en Supabase</strong>.</p>
+</main>
+</body>
+</html>

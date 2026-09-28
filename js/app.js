@@ -104,6 +104,7 @@ function bind() {
   $("form-tarea").addEventListener("submit", onSaveTask);
   $("form-fuente").addEventListener("submit", onSaveFuente);
   $("btn-edit-case").addEventListener("click", () => openCaseForm(caseById(caseId)));
+  $("btn-close-case").addEventListener("click", () => closeCase(caseId));
   for (const zone of ["dropzone-caso", "dropzone-docs"]) bindDrop($(zone));
   $("doc-file").addEventListener("change", () => {
     const file = $("doc-file").files?.[0];
@@ -349,6 +350,23 @@ function openDocModal(file) {
   openModal("modal-subir-doc");
 }
 
+function askClose() {
+  return confirm("Al cerrar el caso se borran sus documentos, tareas, notas y fechas.\nEl cliente no se borra.\n\n¿Cerrar y borrar esos datos?");
+}
+
+function closeCase(id) {
+  if (!id || !askClose()) return;
+  commit(async () => {
+    const next = await api.remove("cases", id);
+    if (caseId === id) {
+      caseId = null;
+      showScreen("casos");
+    }
+    closeModal("modal-nuevo-caso");
+    return next;
+  }, "Caso cerrado. Sus datos se eliminaron.");
+}
+
 function onSaveCase(event) {
   event.preventDefault();
   const id = $("caso-id").value;
@@ -363,6 +381,14 @@ function onSaveCase(event) {
     fecha: $("caso-fecha").value,
     resumen: $("caso-resumen").value
   };
+  if (data.estado === "cerrado") {
+    if (!id) {
+      toast("Para un caso nuevo elige En preparación o En curso.", "warning");
+      return;
+    }
+    closeCase(id);
+    return;
+  }
   commit(async () => {
     const next = id ? await api.update("cases", id, data) : await api.create("cases", data);
     closeModal("modal-nuevo-caso");
@@ -503,7 +529,7 @@ function renderOffice() {
   $("greeting-text").textContent = saludo(office.lawyer);
   $("fecha-actual").textContent = hoyTexto();
   $("setup-card").hidden = Boolean((office.studio || office.lawyer || "").trim());
-  $("sync-label").textContent = online ? "Guardado en este equipo" : "Sin servidor";
+  $("sync-label").textContent = !online ? "Sin servidor" : state.storage === "supabase" ? "Guardado en Supabase" : "Guardado en este equipo";
   if (/^#[0-9a-fA-F]{6}$/.test(office.accent || "")) {
     document.documentElement.style.setProperty("--accent", office.accent);
   }
@@ -588,7 +614,9 @@ function renderCases() {
     return true;
   });
   if (!rows.length) {
-    $("casos-list").innerHTML = empty("Ningún caso con este filtro", "Prueba otra búsqueda o crea un caso.");
+    $("casos-list").innerHTML = filters.casos === "cerrados"
+      ? empty("No quedan casos cerrados", "Al cerrar un caso se borran sus datos para no ocupar espacio.")
+      : empty("Ningún caso con este filtro", "Prueba otra búsqueda o crea un caso.");
     return;
   }
   const head = `<div class="list-head cols-cases"><span>Caso / cliente</span><span>Tribunal</span><span>Materia</span><span>Estado</span><span></span></div>`;

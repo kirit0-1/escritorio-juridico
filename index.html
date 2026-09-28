@@ -87,7 +87,7 @@
   <div class="page-body">
     <div class="panel setup-card" id="setup-card">
       <h3>Personaliza este escritorio</h3>
-      <p>Parte en blanco. El nombre del estudio y el tuyo se ven en el menú, el saludo y los borradores.</p>
+      <p>Parte en blanco. El nombre del estudio y el tuyo se ven en el menú, el saludo y los borradores. <a href="guia.html">Ver guía de uso</a></p>
       <form id="setup-form" class="setup-grid">
         <div class="form-group"><label class="form-label">Estudio</label><input class="form-input" id="setup-studio" placeholder="Nombre del estudio"></div>
         <div class="form-group"><label class="form-label">Tu nombre</label><input class="form-input" id="setup-lawyer" placeholder="Nombre y apellido"></div>
@@ -157,6 +157,7 @@
         <div class="case-chips" id="case-chips"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-outline" type="button" id="btn-close-case" style="background:transparent;color:#fecaca;border-color:rgba(255,255,255,0.25);">Cerrar y borrar</button>
         <button class="btn-outline" type="button" id="btn-edit-case" style="background:transparent;color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.25);">Editar caso</button>
         <span class="state-pill-active" id="case-state">En curso</span>
       </div>
@@ -305,7 +306,7 @@
           <div class="form-group"><label class="form-label">Rol</label><input class="form-input" id="caso-rol"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Estado</label><select class="form-select" id="caso-estado"></select></div>
+          <div class="form-group"><label class="form-label">Estado</label><select class="form-select" id="caso-estado"></select><p class="config-sub">Cerrado borra el caso y sus datos. El cliente se queda.</p></div>
           <div class="form-group"><label class="form-label">Fecha de inicio</label><input class="form-input" id="caso-fecha" type="date"></div>
         </div>
         <div class="form-group"><label class="form-label">Resumen</label><textarea class="form-input" id="caso-resumen" rows="3"></textarea></div>
